@@ -1,13 +1,17 @@
 from parser import Parser
 from Collection import RawImage
+import os
 
 if __name__ == '__main__':
-    objs = Parser.parseImage("notshackaled.png")
 
-    raw_images = []
-    for el in objs:
-        raw_images.append(RawImage(el))
+    try:
+        os.mkdir('images')
+    except:
+        pass
+    
+    p = Parser()
 
+    raw_images = p.parseAndConvert('formula2.png')
     foldername = "images/"
 
     for i in range(len(raw_images)):
