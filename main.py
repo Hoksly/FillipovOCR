@@ -4,16 +4,15 @@ import os
 
 if __name__ == '__main__':
 
-    try:
-        os.mkdir('images')
-    except:
-        pass
-    
-    p = Parser()
+    images = os.listdir('samples2')
 
-    raw_images = p.parseAndConvert('formula2.png')
-    foldername = "images/"
+    print(images)
+    objs = []
+    par = Parser()
+    for image_name in images:
+        print(image_name)
+        res = par.parseAndConvert('samples2/' + image_name)
+        objs.extend(res)
 
-    for i in range(len(raw_images)):
-        raw_images[i].save(foldername + 'img' + str(i) + '.png')
-
+    for i in range(len(objs)):
+        objs[i].save('images/img' + str(i) + '.png')

@@ -59,8 +59,8 @@ class RawImage:
         return image, image_center
 
     @staticmethod
-    def scale_to(image: np.ndarray, target_width=30, target_height=30):
-        print(image, type(image))
+    def scale_to(image: np.ndarray, target_width=75, target_height=75):
+
         width, height = image.shape
 
         # to scale each side properly, if image is less than 30x30 it will be pasted
@@ -73,7 +73,7 @@ class RawImage:
 
         # pasting our scaled image in the middle of form 30x30
         x_add, y_add = (target_width - new_width) // 2, (target_height - new_height) // 2
-        resized = np.zeros((30, 30))
+        resized = np.zeros((target_width, target_height))
         for x in range(new_width):
             for y in range(new_height):
                 resized[x + x_add][y + y_add] = scaled[x][y]

@@ -42,9 +42,7 @@ class Parser:
 
         ret, binary = cv.threshold(image_gray, 0, 253, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
 
-
         objs = []
-
         Q = MuQueue()
 
         for i in range(len(binary)):
@@ -53,7 +51,6 @@ class Parser:
                     Q.put((i, j))
                     binary[i][j] = 0
                     obj = []
-                    print(i, j)
 
                     while not Q.empty():
                         i, j = Q.pop()
@@ -84,7 +81,8 @@ class Parser:
 
         raw_images = []
         for lst in images_in_dotes:
-            raw_images.append(RawImage(lst))
+            if(len(lst) > 20):
+                raw_images.append(RawImage(lst))
         return raw_images
 
 
