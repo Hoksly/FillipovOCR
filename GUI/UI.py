@@ -2,9 +2,10 @@ import sys
 import os
 import sip
 import math
+import queue
 
 from PyQt5.QtWidgets import QStackedLayout, QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, \
-    QApplication
+    QApplication, QMenuBar
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QTimer
 from PyQt5 import QtCore
@@ -48,11 +49,21 @@ class MyButtion(QPushButton):
         self.onRightClick = function
 
 
-
-
 class MainWindow(QWidget):
 
-    def getClassNames(self, filename="GUI/.classes_names.txt"):
+    def __init__(self):
+        super().__init__()
+        self.mainStack = QVBoxLayout()
+        self.imageLabel = QLabel()
+
+        self.classNames = []
+        self.imageQueue = queue.Queue()
+
+        self.rows_count = 8
+
+        self.initUI()
+
+    def getClassNamesDefault(self, filename="GUI/.classes_names.txt"):
         if os.path.isfile(filename):
 
             with open(filename, 'r') as file:
@@ -62,23 +73,13 @@ class MainWindow(QWidget):
             with open(filename, 'w') as file:
                 pass
 
-    def __init__(self):
-        super().__init__()
-        self.mainStack = QVBoxLayout()
+    def exoprtClassNamesDefault(self, filename="GUI/.classes_names.txt"):
+        with open(filename, 'w') as file:
+            file.write(' '.join(self.classNames))
 
-        self.imageLabel = QLabel()
-        self.classNames = []
-
-        self.rows_count = 8
-
-        self.initUI()
-
-    def initUI(self):
-        self.imageLabel = QLabel()
-        self.mainStack = QVBoxLayout()
+    def loadClassesButtonsIntoGrid(self):
         grid = QGridLayout()
-        self.getClassNames()
-        print(self.classNames)
+        self.getClassNamesDefault()
 
         positions = [(i, j) for i in range(math.ceil(len(self.classNames) / self.rows_count)) for j in
                      range(self.rows_count)]
@@ -94,7 +95,50 @@ class MainWindow(QWidget):
 
             grid.addWidget(button, *position)
 
+        return grid
+
+    def _addMenu(self):
+        menuBar = QMenuBar(self)
+        self.setMenuBar(menuBar)
+
+    def addButtonToGrid(self, grid):
+        pass
+
+    def deleteImage(self):
+        pass
+
+    def skipImage(self):
+        pass
+
+    def backToPriviousImage(self):
+        pass
+
+    def addOperationButtons(self, grid):
+        operationButtonsLevel = math.ceil(len(self.classNames) / self.rows_count) + 1
+        addButton = QPushButton('add', self)
+        backButton = QPushButton('back', self)
+        skipButton = QPushButton('skip', self)
+        deleteButton = QPushButton('del', self)
+
+        addButton.clicked.connect(self.addButtonToGrid)
+        backButton.clicked.connect(self.backToPriviousImage)
+        skipButton.clicked.connect(self.skipImage)
+        deleteButton.clicked.connect(self.deleteImage)
+
+        grid.addWidget(addButton, operationButtonsLevel, 0)
+        grid.addWidget(deleteButton, operationButtonsLevel, self.rows_count - 1)
+        grid.addWidget(skipButton, operationButtonsLevel, self.rows_count - 2)
+        grid.addWidget(backButton, operationButtonsLevel, self.rows_count - 3)
+
+    def initUI(self):
+        self.imageLabel = QLabel()
+        self.mainStack = QVBoxLayout()
+
         self.mainStack.addWidget(self.imageLabel)
+
+        grid = self.loadClassesButtonsIntoGrid()
+
+        self.addOperationButtons(grid)
 
         self.mainStack.addLayout(grid)
 
@@ -102,11 +146,6 @@ class MainWindow(QWidget):
         self.setWindowTitle('IDK how to name you')
 
         self.show()
-
-    def magic(self):
-        print("some magic")
-        self.imageLabel.setPixmap(QPixmap('../images/img2.png'))
-        self.imname = '2.png'
 
     def buttonClicked(self, btn):
 
