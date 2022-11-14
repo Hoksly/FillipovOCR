@@ -1,13 +1,25 @@
-
 from sympy import *
 
-class Solver:
-    
-    equationLatex = ""
-    equationSolvedLatex = ""
 
+class Solver:
+
+    def __init__(self, equation=""):
+        self.equationSolvedLatex = None
+        self.equationLatex = None
+        solve(equation)
 
     def solve(self, equation: str):
-        x = Symbol('x')
         self.equationLatex = latex(equation)
-        self.equationSolvedLatex = (latex(dsolve(equation)))
+        y = Function('y')
+        x = symbols('x')
+        self.equationSolvedLatex = (latex(dsolve(equation, y(x))))
+
+    def solve_and_get(self, equation: str):
+        self.solve(equation)
+        return self.equationSolvedLatex
+
+    def get_equation_latex(self):
+        return self.equationLatex
+
+    def get_solution_latex(self):
+        return self.equationSolvedLatex
