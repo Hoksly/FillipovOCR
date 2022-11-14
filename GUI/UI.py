@@ -60,13 +60,19 @@ class MyList:
         self.current_pos = -1
 
     def push(self, item):
+
         if self.current_pos > -1:
-            self._lst = self._lst[0:self.current_pos]
+            if self.current_pos == -1:
+                self._lst = []
+            else:
+                self._lst = self._lst[0:self.current_pos-1]
 
         self._lst.append(item)
         if len(self._lst) > self._max_items:
             self._lst.pop()
         self.current_pos = len(self._lst) - 1
+
+        print(self._lst)
 
     def get(self):
         if -1 < self.current_pos < len(self._lst):
@@ -261,6 +267,21 @@ class MainWindow(QWidget):
 
     def openDataset(self):
         self.datasetFolder = QFileDialog.getExistingDirectory(None, 'Select a folder:', '', QFileDialog.ShowDirsOnly)
+        if self.datasetFolder and os.path.isdir(self.datasetFolder):
+            datasetClasses = os.listdir(self.datasetFolder)
+            allClassesAlreadyInDataset = True
+            for el in datasetClasses:
+                if el not in self.classNames:
+                    allClassesAlreadyInDataset = False
+                    break
+            if not allClassesAlreadyInDataset:
+                msg = AskBinary("Found additional classes in dataset. Update?")
+                if msg.ask():
+                    for el in datasetClasses:
+                        if el not in self.classNames:
+                            self.classNames.append(el)
+                    self.recreateGrid()
+
 
     def parseFolder(self):
         folderToParse = QFileDialog.getExistingDirectory(None, 'Select a folder:', '', QFileDialog.ShowDirsOnly)
@@ -291,6 +312,10 @@ class MainWindow(QWidget):
         return menuBar
 
     def addButton(self, buttonName: str):
+        if os.path.isdir(self.datasetFolder + '/' + buttonName):
+            if not askToUseExistingDirectory():
+                shutil.rmtree(self.datasetFolder + '/' + buttonName)
+
         if self.buttonsCount > 4 and self.rows_count - (self.buttonsCount - 4) % self.rows_count != self.rows_count:
             y = (math.ceil((self.buttonsCount - 4) / self.rows_count)) - 1
             x = (self.buttonsCount - 4) % self.rows_count
@@ -383,8 +408,9 @@ class MainWindow(QWidget):
 
     def backToPreviousImage(self):
         previous_image = self.previousImages.get()
-        self.currentImage = previous_image
-        self.setImage(previous_image)
+        if previous_image:
+            self.currentImage = previous_image
+            self.setImage(previous_image)
 
     def addOperationButtons(self, grid):
         operationButtonsLevel = math.ceil(self.buttonsCount / self.rows_count) + 1
@@ -462,8 +488,10 @@ class MainWindow(QWidget):
         folderName = self.datasetFolder + '/' + className
 
         destination = self.moveImageFile(self.currentImage, folderName)
+        print(destination)
         if destination:
             self.previousImages.push(destination)
+
         return True
 
     def buttonLeftClicked(self, btn: MyButton):
@@ -536,15 +564,19 @@ class MainWindow(QWidget):
                 self.inputLabel = None
                 self.mainStack.itemAt(2).widget().deleteLater()
         if e.key() == 16777220 and self.inputLabelActive:
-            text = self.inputLabel.text()
-            print(text)
-            if text in self.classNames:
-                self.moveImage(text)
+            labelText = self.inputLabel.text()
+            print(labelText)
+            if labelText in self.classNames:
+                self.moveImage(labelText)
                 self.setNextImage()
             else:
-                msgBox = AskBinary("No such class: " + text + "Add it?")
+                msgBox = AskBinary("No such class: " + labelText + " Add it?")
                 if msgBox.ask():
-                    pass
+                    self.addButton(labelText)
+                    self.classNames.append(labelText)
+                    self.moveImage(labelText)
+                    self.setNextImage()
+
 
             self.inputLabel.setText("")
 
