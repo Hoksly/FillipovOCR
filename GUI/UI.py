@@ -290,15 +290,13 @@ class MainWindow(QWidget):
 
         return menuBar
 
-    def addButtonToGrid(self, button: MyButton):
-        # if we ahve enough place on a grid and no need to move it
-
+    def addButton(self, buttonName: str):
         if self.buttonsCount > 4 and self.rows_count - (self.buttonsCount - 4) % self.rows_count != self.rows_count:
             y = (math.ceil((self.buttonsCount - 4) / self.rows_count)) - 1
             x = (self.buttonsCount - 4) % self.rows_count
 
 
-            button = MyButton(self.defaultButtonName, self)
+            button = MyButton(buttonName, self)
 
             button.setLeftClick(self.buttonLeftClicked)
             button.setRightClick(self.buttonRightClicked)
@@ -324,7 +322,7 @@ class MainWindow(QWidget):
             y = self.buttonsCount // self.rows_count
             x = 0
             # actual button adding
-            button = MyButton(self.defaultButtonName, self)
+            button = MyButton(buttonName, self)
 
             button.setLeftClick(self.buttonLeftClicked)
             button.setRightClick(self.buttonRightClicked)
@@ -334,6 +332,12 @@ class MainWindow(QWidget):
             self.buttonsCount += 1
             # place our special buttons again
             self.addOperationButtons(self.buttonsGrid)
+    def addButtonClicked(self, button: MyButton, newButtonName = None):
+        # if we have enough place on a grid and no need to move it
+        self.addButton(self.defaultButtonName)
+
+
+
 
     def removeButtonFromGrid(self, buttonName):
         removeButton = True
@@ -389,7 +393,7 @@ class MainWindow(QWidget):
         skipButton = QPushButton('skip', self)
         deleteButton = QPushButton('del', self)
 
-        addButton.clicked.connect(self.addButtonToGrid)
+        addButton.clicked.connect(self.addButtonClicked)
         backButton.clicked.connect(self.backToPreviousImage)
         skipButton.clicked.connect(self.skipImage)
         deleteButton.clicked.connect(self.deleteImage)
@@ -482,6 +486,7 @@ class MainWindow(QWidget):
 
         msg.exec_()
 
+
     def buttonRightClicked(self, btn: MyButton):
         'Change name of a button'
         newButtonName, okPressed = QInputDialog.getText(
@@ -530,8 +535,18 @@ class MainWindow(QWidget):
                 self.inputLabelActive = False
                 self.inputLabel = None
                 self.mainStack.itemAt(2).widget().deleteLater()
-        if e.key() == 16777220:
-            print("Enter pressed")
+        if e.key() == 16777220 and self.inputLabelActive:
+            text = self.inputLabel.text()
+            print(text)
+            if text in self.classNames:
+                self.moveImage(text)
+                self.setNextImage()
+            else:
+                msgBox = AskBinary("No such class: " + text + "Add it?")
+                if msgBox.ask():
+                    pass
+
+            self.inputLabel.setText("")
 
         if e.key() == QtCore.Qt.Key.Key_Tab:
             print('here')
