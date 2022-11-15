@@ -3,8 +3,7 @@ import sys
 import os
 import sip
 import math
-import queue
-import collections
+from collections import deque
 
 from PyQt5.QtWidgets import QStackedLayout, QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, \
     QApplication, QMenuBar, QMenu, QMainWindow, QAction, qApp, QFileDialog, QMessageBox, QLineEdit, QInputDialog
@@ -56,6 +55,7 @@ class MyLabel(QLabel):
 class MyList:
     def __init__(self, max_items=5):
         self._lst = []
+        self._lst2 = deque()
         self._max_items = max_items
         self.current_pos = -1
 
@@ -65,18 +65,20 @@ class MyList:
             if self.current_pos == -1:
                 self._lst = []
             else:
-                self._lst = self._lst[0:self.current_pos-1]
+                self._lst = self._lst[0:self.current_pos]
 
         self._lst.append(item)
         if len(self._lst) > self._max_items:
             self._lst.pop()
-        self.current_pos = len(self._lst) - 1
+        self.current_pos = len(self._lst)
 
-        print(self._lst)
+        print("Push", self._lst)
 
     def get(self):
-        if -1 < self.current_pos < len(self._lst):
+        print("Get", self._lst, self.current_pos)
+        if 0 < self.current_pos < len(self._lst)+1:
             self.current_pos -= 1
+
             return self._lst[self.current_pos]
         return None
 
@@ -408,7 +410,10 @@ class MainWindow(QWidget):
 
     def backToPreviousImage(self):
         previous_image = self.previousImages.get()
+        print("Image: ", previous_image)
         if previous_image:
+            if(self.currentImage):
+                self.allImages.append(self.currentImage)
             self.currentImage = previous_image
             self.setImage(previous_image)
 
@@ -453,6 +458,7 @@ class MainWindow(QWidget):
         self.layout().setMenuBar(self.createMenu())
 
     def setImage(self, imageLocation):
+        print("All images: ", len(self.allImages))
         if (imageLocation):
             self.imageLabel.setPixmap(QPixmap(imageLocation))
         else:
