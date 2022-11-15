@@ -1,17 +1,17 @@
-from parser import Parser
+from parsing.parser import Parser
 from Collection import RawImage
 import os
 
 if __name__ == '__main__':
 
-    images = os.listdir('samples2')
+    images = os.listdir('testCollection')
 
     print(images)
     objs = []
     par = Parser()
     for image_name in images:
         print(image_name)
-        res = par.parseAndConvert('samples2/' + image_name)
+        res = par.parseAndConvert('testCollection/' + image_name)
         objs.extend(res)
 
     for i in range(len(objs)):
