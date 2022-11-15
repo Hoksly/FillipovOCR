@@ -42,14 +42,6 @@ class MyLabel(QLabel):
     def __init__(self, *args, **kargs):
         super(MyLabel, self).__init__(*args, **kargs)
 
-    @staticmethod
-    def keyboardGrabber() -> 'QWidget':
-        print("Grabbing")
-        return super(MyLabel).keyboardGrabber()
-
-    def keyPressEvent(self, ev: QKeyEvent) -> None:
-        print("I am here")
-        super(MyLabel, self).keyPressEvent(ev)
 
 
 class MyList:
@@ -81,14 +73,6 @@ class MyButton(QPushButton):
         self.onMiddleClick = None
         super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def keyboardGrabber() -> 'QWidget':
-        print("grabbing button")
-        return super(MyButton).keyboardGrabber()
-
-    def releaseKeyboard(self) -> None:
-        print("Relasing keyboard")
-        super(MyButton, self).releaseKeyboard()
 
     def mousePressEvent(self, event):
         '''re-implemented to suppress Right-Clicks from selecting items.'''
@@ -177,7 +161,7 @@ class MainWindow(QWidget):
 
     def moveImageFile(self, imageFile, destinationFolder, replace=False):
         self.checkOrCreateFolder(destinationFolder)
-        print("Moving:", imageFile)
+
         if imageFile and os.path.exists(imageFile):
             newImageName = 'img' + str(len(os.listdir(destinationFolder)))
 
@@ -399,7 +383,7 @@ class MainWindow(QWidget):
 
     def backToPreviousImage(self):
         previous_image = self.previousImages.get()
-        print("Image: ", previous_image)
+
         if previous_image:
             if(self.currentImage):
                 self.allImages.append(self.currentImage)
@@ -447,7 +431,7 @@ class MainWindow(QWidget):
         self.layout().setMenuBar(self.createMenu())
 
     def setImage(self, imageLocation):
-        print("All images: ", len(self.allImages))
+
         if (imageLocation):
             self.imageLabel.setPixmap(QPixmap(imageLocation))
         else:
@@ -483,14 +467,14 @@ class MainWindow(QWidget):
         folderName = self.datasetFolder + '/' + className
 
         destination = self.moveImageFile(self.currentImage, folderName)
-        print(destination)
+
         if destination:
             self.previousImages.push(destination)
 
         return True
 
     def buttonLeftClicked(self, btn: MyButton):
-        print(self.currentImage)
+
         if self.moveImage(btn.text()):
             self.setNextImage()
 
@@ -549,7 +533,7 @@ class MainWindow(QWidget):
         self.removeButtonFromGrid(btn.text())
 
     def keyPressEvent(self, e: QKeyEvent) -> None:
-        print("Main:", e.key())
+
         if e.key() == QtCore.Qt.Key.Key_F1:
             if not self.inputLabelActive:
                 self.inputLabelActive = True
@@ -561,11 +545,11 @@ class MainWindow(QWidget):
                 self.mainStack.itemAt(2).widget().deleteLater()
         if e.key() == 16777220 and self.inputLabelActive: # Enter pressed
             labelText = self.inputLabel.text()
-            print(labelText)
             if labelText in self.classNames:
+
                 self.moveImage(labelText)
                 self.setNextImage()
-            else:
+            elif labelText != "":
                 msgBox = AskBinary("No such class: " + labelText + " Add it?")
                 if msgBox.ask():
                     self.addButton(labelText)
@@ -577,7 +561,7 @@ class MainWindow(QWidget):
             self.inputLabel.setText("")
 
         if e.key() == QtCore.Qt.Key.Key_Tab:
-            print('here')
+
 
 
 class MyAppWrapper(QApplication):
@@ -631,7 +615,7 @@ class Program:
         self.fullCachePath = workingFolder + '/' + cacheFileName if workingFolder else cacheFileName
         if os.path.exists(self.fullCachePath):
             self.readCache(self.fullCachePath)
-        print("Init:", self.imagesFolder, self.datasetFolder)
+
 
     def run(self):
 
@@ -642,7 +626,7 @@ class Program:
         app.exec_()
 
         self.imagesFolder, self.datasetFolder, self.classesNames = window.getCache()
-        print(self.imagesFolder, self.datasetFolder)
+
         self.writeCache(self.fullCachePath)
 
 
