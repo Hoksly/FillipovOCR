@@ -177,6 +177,7 @@ class MainWindow(QWidget):
 
     def moveImageFile(self, imageFile, destinationFolder, replace=False):
         self.checkOrCreateFolder(destinationFolder)
+        print("Moving:", imageFile)
         if imageFile and os.path.exists(imageFile):
             newImageName = 'img' + str(len(os.listdir(destinationFolder)))
 
@@ -489,6 +490,7 @@ class MainWindow(QWidget):
         return True
 
     def buttonLeftClicked(self, btn: MyButton):
+        print(self.currentImage)
         if self.moveImage(btn.text()):
             self.setNextImage()
 
@@ -557,7 +559,7 @@ class MainWindow(QWidget):
                 self.inputLabelActive = False
                 self.inputLabel = None
                 self.mainStack.itemAt(2).widget().deleteLater()
-        if e.key() == 16777220 and self.inputLabelActive:
+        if e.key() == 16777220 and self.inputLabelActive: # Enter pressed
             labelText = self.inputLabel.text()
             print(labelText)
             if labelText in self.classNames:
