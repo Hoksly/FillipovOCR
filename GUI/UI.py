@@ -61,25 +61,13 @@ class MyList:
 
     def push(self, item):
 
-        if self.current_pos > -1:
-            if self.current_pos == -1:
-                self._lst = []
-            else:
-                self._lst = self._lst[0:self.current_pos]
-
-        self._lst.append(item)
-        if len(self._lst) > self._max_items:
-            self._lst.pop()
-        self.current_pos = len(self._lst)
-
-        print("Push", self._lst)
+        self._lst2.append(item)
+        if len(self._lst2) > 5:
+            self._lst2.popleft()
 
     def get(self):
-        print("Get", self._lst, self.current_pos)
-        if 0 < self.current_pos < len(self._lst)+1:
-            self.current_pos -= 1
-
-            return self._lst[self.current_pos]
+        if len(self._lst2) > 0:
+            return self._lst2.pop()
         return None
 
     def __len__(self):
@@ -617,7 +605,9 @@ class Program:
             self.imagesFolder = folderNames[1] if lines[1] != "None" else None
 
             self.classesNames = list(lines[1].split(' ')) if len(lines[1]) > 1 else []
+
         self.clearClasses()
+        self.classesNames.sort()
 
     def writeCache(self, filename):
         with open(filename, 'w') as file:
