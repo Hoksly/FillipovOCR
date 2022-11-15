@@ -467,7 +467,7 @@ class MainWindow(QWidget):
             os.mkdir(folderName)
 
     def moveImage(self, className):
-        if not self.allImages:
+        if not self.allImages and not self.currentImage:
             return False
         if not self.datasetFolder or not os.path.exists(self.datasetFolder):
             msg = QMessageBox()
