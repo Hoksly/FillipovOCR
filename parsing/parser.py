@@ -38,6 +38,8 @@ class Parser:
                  scaleFully=False, scaleFullyRate=0.9, whiteThreshold=249, blackThreshold=0,
                  rescalingInterpolation=cv2.INTER_AREA, pixelsInImageThreshold=20,
                  rescaleOriginalImage=True, rescaleToAtLeast=200, rescaleToAtMaximum=1000):
+
+
         self.targetWidth = targetSizes[0]
         self.targetHeight = targetSizes[1]
 
@@ -69,14 +71,16 @@ class Parser:
 
         Q = MyQueue()
         whitePixels = []
-        gg = 0
+
+
         for i in range(len(binaryImage)):
             for j in range(len(binaryImage[i])):
                 if binaryImage[i][j] > self.whiteThreshold-1:
                     Q.put((i, j))
                     binaryImage[i][j] = 0
                     obj = []
-                    gg += 1
+
+
                     while not Q.empty():
                         i, j = Q.pop()
 
@@ -112,7 +116,6 @@ class Parser:
                                 Q.put((i - 1, j + 1))
                                 binaryImage[i - 1][j + 1] = 0
 
-                    cv2.imwrite("tmp/{}.png".format(gg), binaryImage)
                     whitePixels.append(obj)
         return whitePixels
 
