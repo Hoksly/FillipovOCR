@@ -119,7 +119,7 @@ class Parser:
                     whitePixels.append(obj)
         return whitePixels
 
-    def parseImage(self, image_path: str) -> list:
+    def _parseImage(self, image_path: str) -> list:
 
         image = cv2.imread(image_path)
         if self.rescaleOriginalImage:
@@ -157,7 +157,7 @@ class Parser:
                 i_mn = i
 
         # updating image center
-        imageCenter = Point((i_mx + i_mn) // 2, (j_mx + j_mn) // 2)
+        imageCenter = (Point(i_mn, j_mn), Point(i_mx, j_mx))
 
         # finding out size of image
         width, height = i_mx - i_mn + 1, j_mx - j_mn + 1
@@ -205,7 +205,7 @@ class Parser:
         return resized
 
     def parseAndConvert(self, image_name: str) -> list:
-        imagesInDotes = self.parseImage(image_name)
+        imagesInDotes = self._parseImage(image_name)
         original = 255 - cv2.imread(image_name)
 
         images = []
@@ -218,3 +218,9 @@ class Parser:
             rawImages.append(RawImage(image, center))
 
         return rawImages
+
+if __name__ == '__main__':
+    parser  = Parser()
+
+    for el in parser.parseAndConvert('/root/Github/FillipovOCR/img2.jpg'):
+        print(el)
