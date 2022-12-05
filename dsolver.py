@@ -6,6 +6,11 @@ from sympy import *
 class DSolver:
     @staticmethod
     def to_latex(equation: str):
+        """
+
+        :param equation: any expression
+        :return: latex form of the given expression
+        """
         return latex(equation.replace(" ", ""))
 
     @staticmethod
