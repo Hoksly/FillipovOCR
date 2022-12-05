@@ -33,10 +33,10 @@ class DSolver:
         formatted = formatted.replace("^", "**")
         formatted = formatted.replace("e", "E")
         formatted = formatted.replace("y'", "diff(y, x)")
-        formatted = formatted.replace("y", "y(x)")
         if DSolver.can_cut_differentials(formatted):
             formatted = formatted.replace("dx", "1")
-            formatted = formatted.replace("dy", "diff(y(x),x)")
+            formatted = formatted.replace("dy", "diff(y, x)")
+            formatted = formatted.replace("y", "y(x)")
             return formatted
         else:
             return None
@@ -44,11 +44,11 @@ class DSolver:
     @staticmethod
     def can_cut_differentials(equation: str):
         modified = equation.replace("dx", "1")
-        modified = modified.replace("dy(x)", "(M/V)")
-        modified = modified.replace("y(x)", "y")
+        modified = modified.replace("dy", "(M/V)")
+        modified = modified.replace("y", "y")
         expected = equation.replace("dx", "V")
-        expected = expected.replace("dy(x)", "M")
-        expected = expected.replace("y(x)", "y")
+        expected = expected.replace("dy", "M")
+        expected = expected.replace("y", "y")
         eq1 = DSolver.to_equation(expected)
         eq2 = DSolver.to_equation(modified)
         res1 = solve(eq1)
