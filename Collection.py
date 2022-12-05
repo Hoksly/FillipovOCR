@@ -3,12 +3,13 @@ import numpy as np
 import cv2
 import math
 
+
 class NodeType(Enum):
     VARIABLE = 1
     OPERATOR = 2
     NUMBER = 3
     FUNCTION = 4
-
+    EQUATION = 5
 
 class FunctionType(Enum):
     SIN = 1
@@ -54,3 +55,10 @@ class Node:
             return True # just for now
 
         return False
+
+    def distanceTo(self, another):
+        math.sqrt(pow(self.center.x - another.center.x, 2) + pow(self.center.y - another.center.y, 2))
+
+    def diagonalSize(self):
+        return math.sqrt(pow(self.box[0].x - self.box[1].x, 2) + pow(self.box[0].y - self.box[1].y, 2))
+
