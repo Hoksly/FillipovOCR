@@ -1,13 +1,13 @@
 from enum import Enum
 import numpy as np
 import cv2
-
+import math
 
 class NodeType(Enum):
     VARIABLE = 1
-    FUNCTION = 2
-    OPERATOR = 3
-    NUMBER = 4
+    OPERATOR = 2
+    NUMBER = 3
+    FUNCTION = 4
 
 
 class FunctionType(Enum):
@@ -27,8 +27,7 @@ class Point:
 
 class RawImage:
 
-    def __init__(self, image: np.ndarray, center:Point) -> None:
-
+    def __init__(self, image: np.ndarray, center: Point) -> None:
         self.image = image
         self.center = center
 
@@ -40,10 +39,18 @@ class RawImage:
 
 
 class Node:
-    def __init__(self, node_type: NodeType, value: str, center: Point):
-        self.type = node_type
+    def __init__(self, nodeType: NodeType, value: str, box: (Point, Point) = (Point(0, 0), Point(0, 0))):
+        self.type = nodeType
         self.value = value
-        self.center = center
+        self.center = Point((box[0].x + box[1].x)/2, (box[0].y + box[1].y)/2)
+        self.box = box
 
     def __str__(self):
         return str(self.value) + " " + str(self.center) + ", "
+
+    def inOneLine(self, another):
+        angle = math.atan((another.center.y - self.center.y) / (another.center.x - self.center.x)) / math.pi * 180
+        if -15 < angle < 15:
+            return True # just for now
+
+        return False
