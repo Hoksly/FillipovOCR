@@ -4,15 +4,9 @@ from sympy import *
 
 
 class DSolver:
-
     @staticmethod
-    def to_latex(expression):
-        """
-
-        :param expression: any equation
-        :return: the same expression in latex
-        """
-        return latex(expression)
+    def to_latex(equation: str):
+        return latex(equation.replace(" ", ""))
 
     @staticmethod
     def solve(equation: str):
@@ -21,8 +15,10 @@ class DSolver:
         :param equation:
         :return: solution in latex if entered equation is solvable, empty str if not
         """
-        to_solve = DSolver.recognize_symbols(equation)
         try:
+            to_solve = DSolver.recognize_symbols(equation)
+            if to_solve is None:
+                return ""
             solution = DSolver.solve_from_string(to_solve)
             return latex(solution)
         except Exception as e:
@@ -32,21 +28,43 @@ class DSolver:
     @staticmethod
     def recognize_symbols(equation: str):
         formatted = equation.replace(" ", "")
-        formatted = formatted.replace("dx", "1")
-        formatted = formatted.replace("dy", "y'")
+        formatted = formatted.replace("’", "'")
         formatted = DSolver.insert_skipped_multiply(formatted)
         formatted = formatted.replace("^", "**")
         formatted = formatted.replace("e", "E")
-        formatted = formatted.replace("y'", "(diff(y, x))")
+        formatted = formatted.replace("y'", "diff(y, x)")
         formatted = formatted.replace("y", "y(x)")
-        return formatted
+        if DSolver.can_cut_differentials(formatted):
+            formatted = formatted.replace("dx", "1")
+            formatted = formatted.replace("dy", "diff(y(x),x)")
+            return formatted
+        else:
+            return None
+
+    @staticmethod
+    def can_cut_differentials(equation: str):
+        modified = equation.replace("dx", "1")
+        modified = modified.replace("dy(x)", "(M/V)")
+        modified = modified.replace("y(x)", "y")
+        expected = equation.replace("dx", "V")
+        expected = expected.replace("dy(x)", "M")
+        expected = expected.replace("y(x)", "y")
+        eq1 = DSolver.to_equation(expected)
+        eq2 = DSolver.to_equation(modified)
+        res1 = solve(eq1)
+        res2 = solve(eq2)
+        return res1 == res2
+
+    @staticmethod
+    def to_equation(input_str: str):
+        parts = input_str.split("=")
+        if len(parts) != 2:
+            return ""
+        return Eq(parse_expr(parts[0]), parse_expr(parts[1]))
 
     @staticmethod
     def solve_from_string(equation):
-        parts = equation.split("=")
-        if len(parts) != 2:
-            return ""
-        deq = Eq(parse_expr(parts[0]), parse_expr(parts[1]))
+        deq = DSolver.to_equation(equation)
         DSolver.called_solver = False
         result = DSolver.solve_equation(deq)
         if result is None and not DSolver.called_solver:
@@ -82,7 +100,7 @@ class DSolver:
             s += equation[i]
             if equation[i + 1] in "exy(" and equation[i] in '012345689abcABCDxy':
                 s += '*'
-            elif equation[i] in "exy)'" and equation[i + 1] in '012345689abcABCDxy':
+            elif equation[i] in "exy)'" and equation[i + 1] in '012345689abcdABCDxy':
                 s += '*'
         s += equation[a]
         return s
