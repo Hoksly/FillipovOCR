@@ -587,11 +587,11 @@ class Program:
         with open(filename, 'r') as file:
             data = file.read()
             lines = data.split('\n')
-            folderNames = lines[0].split(' ')
-            self.datasetFolder = folderNames[0] if lines[0] != "None" else None
-            self.imagesFolder = folderNames[1] if lines[1] != "None" else None
+            folderNames = lines[0].split(' ') if lines else None
+            self.datasetFolder = folderNames[0] if folderNames and lines[0] != "None" else None
+            self.imagesFolder = folderNames[1] if len(folderNames) > 1 and lines[1] != "None" else None
 
-            self.classesNames = list(lines[1].split(' ')) if len(lines[1]) > 1 else []
+            self.classesNames = list(lines[1].split(' ')) if lines and len(lines) > 1 and len(lines[1]) > 1 else []
 
         self.clearClasses()
         self.classesNames.sort()
