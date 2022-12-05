@@ -561,6 +561,7 @@ class MainWindow(QWidget):
             self.inputLabel.setText("")
 
         if e.key() == QtCore.Qt.Key.Key_Tab:
+            pass
 
 
 
