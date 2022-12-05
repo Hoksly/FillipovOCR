@@ -3,8 +3,7 @@ import sys
 import os
 import sip
 import math
-import queue
-import collections
+from collections import deque
 
 from PyQt5.QtWidgets import QStackedLayout, QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, \
     QApplication, QMenuBar, QMenu, QMainWindow, QAction, qApp, QFileDialog, QMessageBox, QLineEdit, QInputDialog
@@ -12,6 +11,26 @@ from PyQt5.QtWidgets import QStackedLayout, QVBoxLayout, QGridLayout, QWidget, Q
 from PyQt5.QtGui import QPixmap, QKeyEvent, QFont
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
+
+
+class AskBinary:
+    def __init__(self, message):
+        self.msgBox = QMessageBox()
+        self.msgBox.setText(message)
+        self.msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        self.msgBox.setDefaultButton(QMessageBox.No)
+        self.msgBox.buttonClicked.connect(self.buttonClicked)
+        self.result = False
+
+    def buttonClicked(self, button):
+        if button.text() == "&Yes":
+            self.result = True
+        else:
+            self.result = False
+
+    def ask(self):
+        self.msgBox.exec_()
+        return self.result
 
 
 class MyGrid(QVBoxLayout):
@@ -23,35 +42,24 @@ class MyLabel(QLabel):
     def __init__(self, *args, **kargs):
         super(MyLabel, self).__init__(*args, **kargs)
 
-    @staticmethod
-    def keyboardGrabber() -> 'QWidget':
-        print("Grabbing")
-        return super(MyLabel).keyboardGrabber()
-
-    def keyPressEvent(self, ev: QKeyEvent) -> None:
-        print("I am here")
-        super(MyLabel, self).keyPressEvent(ev)
 
 
 class MyList:
     def __init__(self, max_items=5):
         self._lst = []
+        self._lst2 = deque()
         self._max_items = max_items
         self.current_pos = -1
 
     def push(self, item):
-        if self.current_pos > -1:
-            self._lst = self._lst[0:self.current_pos]
 
-        self._lst.append(item)
-        if len(self._lst) > self._max_items:
-            self._lst.pop()
-        self.current_pos = len(self._lst) - 1
+        self._lst2.append(item)
+        if len(self._lst2) > 5:
+            self._lst2.popleft()
 
     def get(self):
-        if -1 < self.current_pos < len(self._lst):
-            self.current_pos -= 1
-            return self._lst[self.current_pos]
+        if len(self._lst2) > 0:
+            return self._lst2.pop()
         return None
 
     def __len__(self):
@@ -65,14 +73,6 @@ class MyButton(QPushButton):
         self.onMiddleClick = None
         super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def keyboardGrabber() -> 'QWidget':
-        print("grabbing button")
-        return super(MyButton).keyboardGrabber()
-
-    def releaseKeyboard(self) -> None:
-        print("Relasing keyboard")
-        super(MyButton, self).releaseKeyboard()
 
     def mousePressEvent(self, event):
         '''re-implemented to suppress Right-Clicks from selecting items.'''
@@ -102,6 +102,11 @@ class MyButton(QPushButton):
         self.onRightClick = function
 
 
+def askToUseExistingDirectory():
+    msgBox = AskBinary("Such directory already exist in dataset. Use it?")
+    return msgBox.ask()
+
+
 class MainWindow(QWidget):
 
     def __init__(self, imagesFolder=None, datasetFolder=None, classesNames=None, *args, **kwargs):
@@ -121,9 +126,10 @@ class MainWindow(QWidget):
         self.imageLabel.setAlignment(Qt.AlignCenter)
 
         self.classNames = classesNames
-        print(self.classNames)
-        self.specialButtons = []
+
         self.buttonsCount = 0
+        self.specialButtons = []
+
         self.previousImages = MyList()
 
         self.rows_count = 8
@@ -155,6 +161,7 @@ class MainWindow(QWidget):
 
     def moveImageFile(self, imageFile, destinationFolder, replace=False):
         self.checkOrCreateFolder(destinationFolder)
+
         if imageFile and os.path.exists(imageFile):
             newImageName = 'img' + str(len(os.listdir(destinationFolder)))
 
@@ -166,18 +173,21 @@ class MainWindow(QWidget):
             return destinationFolder + '/' + newImageName + '.png'
 
     def recreateGrid(self):
-        # Not working yet
-        """
-        print('hehre')
-        self.buttonsGrid.deleteLater()
-        self.buttonsCount = 0
+        self.mainStack.removeItem(self.buttonsGrid)
+        for el in range(self.buttonsGrid.count()):
+            if self.buttonsGrid.itemAt(el):
+                self.buttonsGrid.itemAt(el).widget().deleteLater()
+
         del self.buttonsGrid
+
         self.buttonsGrid = QGridLayout()
+        self.mainStack.insertLayout(1, self.buttonsGrid)
+
+        self.buttonsCount = 0
+        self.specialButtons = []
         self.loadClassesButtonsIntoGrid()
         self.addOperationButtons(self.buttonsGrid)
 
-        self.mainStack.insertLayout(1, self.buttonsGrid)
-        """
     def loadClassesButtonsIntoGrid(self):
         if not self.classNames:
             return
@@ -221,7 +231,7 @@ class MainWindow(QWidget):
         msg.setDefaultButton(QMessageBox.Yes)
         msg.buttonClicked.connect(self.popupClicked)
 
-        x = msg.exec_()
+        msg.exec_()
 
     def openImagesFolder(self):
         self.currentFolder = QFileDialog.getExistingDirectory(None, 'Select a folder:', '', QFileDialog.ShowDirsOnly)
@@ -232,6 +242,21 @@ class MainWindow(QWidget):
 
     def openDataset(self):
         self.datasetFolder = QFileDialog.getExistingDirectory(None, 'Select a folder:', '', QFileDialog.ShowDirsOnly)
+        if self.datasetFolder and os.path.isdir(self.datasetFolder):
+            datasetClasses = os.listdir(self.datasetFolder)
+            allClassesAlreadyInDataset = True
+            for el in datasetClasses:
+                if el not in self.classNames:
+                    allClassesAlreadyInDataset = False
+                    break
+            if not allClassesAlreadyInDataset:
+                msg = AskBinary("Found additional classes in dataset. Update?")
+                if msg.ask():
+                    for el in datasetClasses:
+                        if el not in self.classNames:
+                            self.classNames.append(el)
+                    self.recreateGrid()
+
 
     def parseFolder(self):
         folderToParse = QFileDialog.getExistingDirectory(None, 'Select a folder:', '', QFileDialog.ShowDirsOnly)
@@ -261,14 +286,17 @@ class MainWindow(QWidget):
 
         return menuBar
 
-    def addButtonToGrid(self, button: MyButton):
-        # if we ahve enough place on a grid and no need to move it
+    def addButton(self, buttonName: str):
+        if os.path.isdir(self.datasetFolder + '/' + buttonName):
+            if not askToUseExistingDirectory():
+                shutil.rmtree(self.datasetFolder + '/' + buttonName)
 
         if self.buttonsCount > 4 and self.rows_count - (self.buttonsCount - 4) % self.rows_count != self.rows_count:
             y = (math.ceil((self.buttonsCount - 4) / self.rows_count)) - 1
             x = (self.buttonsCount - 4) % self.rows_count
 
-            button = MyButton(self.defaultButtonName, self)
+
+            button = MyButton(buttonName, self)
 
             button.setLeftClick(self.buttonLeftClicked)
             button.setRightClick(self.buttonRightClicked)
@@ -287,13 +315,14 @@ class MainWindow(QWidget):
                     if item.widget() in self.specialButtons:
                         item.widget().deleteLater()
 
-            self.buttonsCount -= len(self.specialButtons)
+            self.buttonsCount -= len(self.specialButtons) if self.specialButtons else 0
+
             self.specialButtons.clear()
             # future coordinates at grid
             y = self.buttonsCount // self.rows_count
             x = 0
             # actual button adding
-            button = MyButton(self.defaultButtonName, self)
+            button = MyButton(buttonName, self)
 
             button.setLeftClick(self.buttonLeftClicked)
             button.setRightClick(self.buttonRightClicked)
@@ -303,14 +332,38 @@ class MainWindow(QWidget):
             self.buttonsCount += 1
             # place our special buttons again
             self.addOperationButtons(self.buttonsGrid)
+    def addButtonClicked(self, button: MyButton, newButtonName = None):
+        # if we have enough place on a grid and no need to move it
+        self.addButton(self.defaultButtonName)
+
+
+
 
     def removeButtonFromGrid(self, buttonName):
+        removeButton = True
+        if self.defaultButtonName != buttonName:
+            filesCount = len(os.listdir(self.datasetFolder + '/' + buttonName)) \
+                if self.datasetFolder and os.path.isdir(self.datasetFolder + '/' + buttonName) \
+                else 0
+
+            messageBox = AskBinary("Are you sure you want to remove this button. \n Also directory will be removed." +
+                                   (" {} File{} will be remove".format(filesCount, "s" if filesCount > 1 else "") if filesCount else ""))
+            removeButton = messageBox.ask()
+
+        if not removeButton:
+            return
+
+        if self.datasetFolder and os.path.exists(self.datasetFolder + '/' + buttonName):
+            shutil.rmtree(self.datasetFolder + '/' + buttonName)
+
         for i in range(self.buttonsGrid.count()):
             item = self.buttonsGrid.itemAt(i)
             if item:
                 if item.widget().text() == buttonName:
                     item.widget().deleteLater()
                     self.buttonsCount -= 1
+
+
         self.recreateGrid()
 
     def deleteImage(self):
@@ -330,8 +383,12 @@ class MainWindow(QWidget):
 
     def backToPreviousImage(self):
         previous_image = self.previousImages.get()
-        self.currentImage = previous_image
-        self.setImage(previous_image)
+
+        if previous_image:
+            if(self.currentImage):
+                self.allImages.append(self.currentImage)
+            self.currentImage = previous_image
+            self.setImage(previous_image)
 
     def addOperationButtons(self, grid):
         operationButtonsLevel = math.ceil(self.buttonsCount / self.rows_count) + 1
@@ -340,7 +397,7 @@ class MainWindow(QWidget):
         skipButton = QPushButton('skip', self)
         deleteButton = QPushButton('del', self)
 
-        addButton.clicked.connect(self.addButtonToGrid)
+        addButton.clicked.connect(self.addButtonClicked)
         backButton.clicked.connect(self.backToPreviousImage)
         skipButton.clicked.connect(self.skipImage)
         deleteButton.clicked.connect(self.deleteImage)
@@ -374,6 +431,7 @@ class MainWindow(QWidget):
         self.layout().setMenuBar(self.createMenu())
 
     def setImage(self, imageLocation):
+
         if (imageLocation):
             self.imageLabel.setPixmap(QPixmap(imageLocation))
         else:
@@ -393,7 +451,7 @@ class MainWindow(QWidget):
             os.mkdir(folderName)
 
     def moveImage(self, className):
-        if not self.allImages:
+        if not self.allImages and not self.currentImage:
             return False
         if not self.datasetFolder or not os.path.exists(self.datasetFolder):
             msg = QMessageBox()
@@ -409,11 +467,14 @@ class MainWindow(QWidget):
         folderName = self.datasetFolder + '/' + className
 
         destination = self.moveImageFile(self.currentImage, folderName)
+
         if destination:
             self.previousImages.push(destination)
+
         return True
 
     def buttonLeftClicked(self, btn: MyButton):
+
         if self.moveImage(btn.text()):
             self.setNextImage()
 
@@ -433,18 +494,28 @@ class MainWindow(QWidget):
 
         msg.exec_()
 
+
     def buttonRightClicked(self, btn: MyButton):
         'Change name of a button'
         newButtonName, okPressed = QInputDialog.getText(
-            self, 'Input Dialog', 'Enter your name:')
+            self, 'Button dialog', 'Enter new button name:')
         if okPressed:
-            if self.checkNewName(newButtonName):
-                if newButtonName not in self.classNames:
 
+            if self.checkNewName(newButtonName):
+
+                if newButtonName not in self.classNames:
                     if btn.text() == self.defaultButtonName:
+
                         self.classNames.append(newButtonName)
+
                     elif btn.text() in self.classNames:
                         self.classNames.remove(btn.text())
+                        self.classNames.append(newButtonName)
+
+                    if os.path.isdir(self.datasetFolder + '/' + newButtonName):
+                        if not askToUseExistingDirectory():
+                            shutil.rmtree(self.datasetFolder + '/' + newButtonName)
+
                     self.changeFolderName(btn.text(), newButtonName)
                     btn.setText(newButtonName)
                 else:
@@ -455,14 +526,14 @@ class MainWindow(QWidget):
 
     def buttonMiddleClicked(self, btn: MyButton):
         "delete button"
+
         if btn.text() in self.classNames:
             self.classNames.remove(btn.text())
 
         self.removeButtonFromGrid(btn.text())
 
-
     def keyPressEvent(self, e: QKeyEvent) -> None:
-        print("Main:", e.key())
+
         if e.key() == QtCore.Qt.Key.Key_F1:
             if not self.inputLabelActive:
                 self.inputLabelActive = True
@@ -472,11 +543,26 @@ class MainWindow(QWidget):
                 self.inputLabelActive = False
                 self.inputLabel = None
                 self.mainStack.itemAt(2).widget().deleteLater()
-        if e.key() == 16777220:
-            print("Enter pressed")
+        if e.key() == 16777220 and self.inputLabelActive: # Enter pressed
+            labelText = self.inputLabel.text()
+            if labelText in self.classNames:
+
+                self.moveImage(labelText)
+                self.setNextImage()
+            elif labelText != "":
+                msgBox = AskBinary("No such class: " + labelText + " Add it?")
+                if msgBox.ask():
+                    self.addButton(labelText)
+                    self.classNames.append(labelText)
+                    self.moveImage(labelText)
+                    self.setNextImage()
+
+
+            self.inputLabel.setText("")
 
         if e.key() == QtCore.Qt.Key.Key_Tab:
-            print('here')
+            pass
+
 
 
 class MyAppWrapper(QApplication):
@@ -501,12 +587,14 @@ class Program:
         with open(filename, 'r') as file:
             data = file.read()
             lines = data.split('\n')
-            folderNames = lines[0].split(' ')
-            self.datasetFolder = folderNames[0] if lines[0] != "None" else None
-            self.imagesFolder = folderNames[1] if lines[1] != "None" else None
+            folderNames = lines[0].split(' ') if lines else None
+            self.datasetFolder = folderNames[0] if folderNames and lines[0] != "None" else None
+            self.imagesFolder = folderNames[1] if len(folderNames) > 1 and lines[1] != "None" else None
 
-            self.classesNames = list(lines[1].split(' ')) if len(lines[1]) > 1 else []
+            self.classesNames = list(lines[1].split(' ')) if lines and len(lines) > 1 and len(lines[1]) > 1 else []
+
         self.clearClasses()
+        self.classesNames.sort()
 
     def writeCache(self, filename):
         with open(filename, 'w') as file:
@@ -528,7 +616,7 @@ class Program:
         self.fullCachePath = workingFolder + '/' + cacheFileName if workingFolder else cacheFileName
         if os.path.exists(self.fullCachePath):
             self.readCache(self.fullCachePath)
-        print("Init:", self.imagesFolder, self.datasetFolder)
+
 
     def run(self):
 
@@ -539,7 +627,7 @@ class Program:
         app.exec_()
 
         self.imagesFolder, self.datasetFolder, self.classesNames = window.getCache()
-        print(self.imagesFolder, self.datasetFolder)
+
         self.writeCache(self.fullCachePath)
 
 
