@@ -48,6 +48,8 @@ class DSolver:
 
     @staticmethod
     def can_cut_differentials(equation: str):
+        if not equation.__contains__("dx") and not equation.__contains__("dy"):
+            return True
         modified = equation.replace("dx", "1")
         modified = modified.replace("dy", "(M/V)")
         modified = modified.replace("y", "y")
