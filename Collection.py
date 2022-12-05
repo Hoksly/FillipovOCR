@@ -10,6 +10,7 @@ class NodeType(Enum):
     NUMBER = 3
     FUNCTION = 4
     EQUATION = 5
+    UNDEFINED = 6
 
 class FunctionType(Enum):
     SIN = 1
@@ -28,9 +29,9 @@ class Point:
 
 class RawImage:
 
-    def __init__(self, image: np.ndarray, center: Point) -> None:
+    def __init__(self, image: np.ndarray, imageBox: (Point, Point)) -> None:
         self.image = image
-        self.center = center
+        self.imageBox = imageBox
 
     def save(self, path):
         cv2.imwrite(path, self.image)
