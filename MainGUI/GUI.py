@@ -6,34 +6,16 @@ import math
 from collections import deque
 from parsing.parser import Parser
 from assembling.assemble import Assembler
-from neuro.recognizer import TypeRecognizer
+from solver.dsolver import DSolver
+#from neuro.neuralNetwork import NeuralNetwork
 from PyQt5.QtWidgets import QStackedLayout, QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, \
     QApplication, QMenuBar, QMenu, QMainWindow, QAction, qApp, QFileDialog, QMessageBox, QLineEdit, QInputDialog
+from MainGUI.render import mathTex_to_QPixmap
 
 from PyQt5.QtGui import QPixmap, QKeyEvent, QFont
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 
-
-
-class AskBinary:
-    def __init__(self, message):
-        self.msgBox = QMessageBox()
-        self.msgBox.setText(message)
-        self.msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        self.msgBox.setDefaultButton(QMessageBox.No)
-        self.msgBox.buttonClicked.connect(self.buttonClicked)
-        self.result = False
-
-    def buttonClicked(self, button):
-        if button.text() == "&Yes":
-            self.result = True
-        else:
-            self.result = False
-
-    def ask(self):
-        self.msgBox.exec_()
-        return self.result
 
 
 class MyGrid(QVBoxLayout):
@@ -88,20 +70,28 @@ class MainWindow(QWidget):
 
     def parseImage(self):
         parser = Parser()
-        rawImages = parser.parseAndConvert(self.currentImage)
+        rawImages = parser.parseAndConvert(self.currentImage) if self.currentImage else []
         nodes = []
-        recognizer = TypeRecognizer(None)
-        for raw in rawImages:
-            nodes.append(recognizer.recognize(raw))
+        try:
+            recognizer = NeuralNetwork('data/model')
+            for raw in rawImages:
+                pass
+                #nodes.append(recognizer.recognize(raw))
 
-        self.parsedLabel.setText(Assembler.assemble(nodes))
+            self.parsedLabel.setText(Assembler.assemble(nodes))
+            if self.parsedLabel.text():
+                self.parsedLatex.setPixmap(mathTex_to_QPixmap(DSolver.to_latex(self.parsedLabel.text())))
 
-
+        except Exception as e:
+            pass
 
 
 
     def solveIt(self):
-        pass
+        if self.parsedLabel.text():
+            self.solutionLabel.setText(DSolver.solve(self.parsedLabel.text()))
+            print(self.solutionLabel.text())
+            self.solutionLatex.setPixmap(mathTex_to_QPixmap(('$' + self.solutionLabel.text() + '$')))
 
     def addButtons(self):
         openImageButton = QPushButton("open image", self)
