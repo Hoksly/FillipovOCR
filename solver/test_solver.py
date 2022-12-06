@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from sympy import *
 
-from dsolver import DSolver
+from solver.dsolver import DSolver
 
 
 class TestSolver(TestCase):
