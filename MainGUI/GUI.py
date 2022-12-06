@@ -1,39 +1,21 @@
-import shutil
+
 import sys
 import os
-import sip
-import math
-from collections import deque
+
+from config import MODEL_LOCATION
+
 from parsing.parser import Parser
 from assembling.assemble import Assembler
-from neuro.recognizer import TypeRecognizer
-from PyQt5.QtWidgets import QStackedLayout, QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, \
-    QApplication, QMenuBar, QMenu, QMainWindow, QAction, qApp, QFileDialog, QMessageBox, QLineEdit, QInputDialog
-
-from PyQt5.QtGui import QPixmap, QKeyEvent, QFont
+from solver.dsolver import DSolver
+from neuro.neuralNetwork import NeuralNetwork
+from PyQt5.QtWidgets import QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, \
+    QApplication, QFileDialog, QMessageBox, QLineEdit
+from MainGUI.render import mathTex_to_QPixmap
+from Collection import Node, NodeType
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt
-from PyQt5 import QtCore
 
 
-
-class AskBinary:
-    def __init__(self, message):
-        self.msgBox = QMessageBox()
-        self.msgBox.setText(message)
-        self.msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        self.msgBox.setDefaultButton(QMessageBox.No)
-        self.msgBox.buttonClicked.connect(self.buttonClicked)
-        self.result = False
-
-    def buttonClicked(self, button):
-        if button.text() == "&Yes":
-            self.result = True
-        else:
-            self.result = False
-
-    def ask(self):
-        self.msgBox.exec_()
-        return self.result
 
 
 class MyGrid(QVBoxLayout):
@@ -81,27 +63,35 @@ class MainWindow(QWidget):
         self.setNextImage()
 
     def openImage(self):
-        print("HERE")
         self.currentImage = QFileDialog.getOpenFileName(None, "Select image:", '')[0]
         if self.currentImage:
             self.setImage(self.currentImage)
 
     def parseImage(self):
         parser = Parser()
-        rawImages = parser.parseAndConvert(self.currentImage)
+        rawImages = parser.parseAndConvert(self.currentImage) if self.currentImage else []
         nodes = []
-        recognizer = TypeRecognizer(None)
+
+        recognizer = NeuralNetwork(MODEL_LOCATION)
         for raw in rawImages:
-            nodes.append(recognizer.recognize(raw))
-
+            nodes.append(Node(NodeType.UNDEFINED, recognizer.recognize(raw.image), raw.imageBox))
+        print(nodes)
         self.parsedLabel.setText(Assembler.assemble(nodes))
-
+        if self.parsedLabel.text():
+            self.parsedLatex.setPixmap(mathTex_to_QPixmap(DSolver.to_latex(self.parsedLabel.text())))
 
 
 
 
     def solveIt(self):
-        pass
+        if self.parsedLabel.text():
+            solution = DSolver.solve(self.parsedLabel.text())
+            self.solutionLabel.setText(solution if solution else '')
+            print(self.solutionLabel.text())
+            if solution:
+                self.solutionLatex.setPixmap(mathTex_to_QPixmap(('$' + self.solutionLabel.text() + '$')))
+            else:
+                self.solutionLatex.setText("ERROR")
 
     def addButtons(self):
         openImageButton = QPushButton("open image", self)

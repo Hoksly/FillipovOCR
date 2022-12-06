@@ -51,11 +51,14 @@ class Node:
         return str(self.value) + " " + str(self.center) + ", "
 
     def inOneLine(self, another):
-        angle = math.atan((another.center.y - self.center.y) / (another.center.x - self.center.x)) / math.pi * 180
-        if -15 < angle < 15:
-            return True # just for now
+        if another.center.x - self.center.x != 0:
+            angle = math.atan((another.center.y - self.center.y) / (another.center.x - self.center.x)) / math.pi * 180
+            if -15 < angle < 15:
+                return True # just for now
+            return False
+        return True
 
-        return False
+
 
     def distanceTo(self, another):
         math.sqrt(pow(self.center.x - another.center.x, 2) + pow(self.center.y - another.center.y, 2))

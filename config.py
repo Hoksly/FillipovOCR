@@ -1,0 +1,1 @@
+MODEL_LOCATION = 'data/model.h5'
