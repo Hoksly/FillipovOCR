@@ -21,24 +21,24 @@ class DSolver:
         :return: solution in latex if entered equation is solvable, empty str if not
         """
         try:
-            to_solve = DSolver.recognize_symbols(equation)
+            to_solve = DSolver._recognize_symbols(equation)
             if to_solve is None:
                 return ""
-            solution = DSolver.solve_from_string(to_solve)
+            solution = DSolver._solve_from_string(to_solve)
             return latex(solution)
         except Exception as e:
             print(e)
             return ""
 
     @staticmethod
-    def recognize_symbols(equation: str):
+    def _recognize_symbols(equation: str):
         formatted = equation.replace(" ", "")
         formatted = formatted.replace("’", "'")
-        formatted = DSolver.insert_skipped_multiply(formatted)
+        formatted = DSolver._insert_skipped_multiply(formatted)
         formatted = formatted.replace("^", "**")
         formatted = formatted.replace("e", "E")
         formatted = formatted.replace("y'", "diff(y, x)")
-        if DSolver.can_cut_differentials(formatted):
+        if DSolver._can_cut_differentials(formatted):
             formatted = formatted.replace("dx", "1")
             formatted = formatted.replace("dy", "diff(y, x)")
             formatted = formatted.replace("y", "y(x)")
@@ -47,7 +47,7 @@ class DSolver:
             return None
 
     @staticmethod
-    def can_cut_differentials(equation: str):
+    def _can_cut_differentials(equation: str):
         if not equation.__contains__("dx") and not equation.__contains__("dy"):
             return True
         modified = equation.replace("dx", "1")
@@ -56,24 +56,24 @@ class DSolver:
         expected = equation.replace("dx", "V")
         expected = expected.replace("dy", "M")
         expected = expected.replace("y", "y")
-        eq1 = DSolver.to_equation(expected)
-        eq2 = DSolver.to_equation(modified)
+        eq1 = DSolver._to_equation(expected)
+        eq2 = DSolver._to_equation(modified)
         res1 = solve(eq1)
         res2 = solve(eq2)
         return res1 == res2
 
     @staticmethod
-    def to_equation(input_str: str):
+    def _to_equation(input_str: str):
         parts = input_str.split("=")
         if len(parts) != 2:
             return ""
         return Eq(parse_expr(parts[0]), parse_expr(parts[1]))
 
     @staticmethod
-    def solve_from_string(equation):
-        deq = DSolver.to_equation(equation)
+    def _solve_from_string(equation):
+        deq = DSolver._to_equation(equation)
         DSolver.called_solver = False
-        result = DSolver.solve_equation(deq)
+        result = DSolver._solve_equation(deq)
         if result is None and not DSolver.called_solver:
             result = dsolve(deq)
         return result
@@ -81,7 +81,7 @@ class DSolver:
     called_solver = True
 
     @staticmethod
-    def time_break(func):
+    def _time_break(func):
         def wrapper(*args, **kwargs):
             try:
                 signal.alarm(10)
@@ -95,12 +95,11 @@ class DSolver:
         return wrapper
 
     @staticmethod
-    @time_break
-    def solve_equation(deq: Eq):
+    def _solve_equation(deq: Eq):
         return dsolve(deq)
 
     @staticmethod
-    def insert_skipped_multiply(equation: str):
+    def _insert_skipped_multiply(equation: str):
         s = ""
         a = len(equation) - 1
         for i in range(0, a):
@@ -113,7 +112,7 @@ class DSolver:
         return s
 
     @staticmethod
-    def to_derivative_from(equation: str):
+    def _to_derivative_from(equation: str):
         s = ""
         a = len(equation) - 1
         for i in range(0, a):
