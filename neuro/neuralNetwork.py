@@ -1,12 +1,17 @@
-import os
 import numpy as np
 import tensorflow as tf
-import tensorflow.python.keras.layers as tfl
+import tensorflow.keras.layers as tfl
 
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import InceptionV3
+from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.optimizers import Adam
+import cv2
+import os
 
 # Метрики
-
+sth = ["'", '(', ')', '+', ',', '-', '0', '1', '2', '3', '4', '5', '6', '9', 'C', '[', ']', 'a', 'c', 'd', 'dot', 'e', 'i', 'lambda', 'n', 'o', 'pi', 's', 'sqrt', 'x', 'y', 'z']
 
 def recall(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
@@ -27,6 +32,14 @@ def f1_score(y_true, y_pred):
     recall_f1 = recall(y_true, y_pred)
     return 2 * ((precision_f1 * recall_f1) / (precision_f1 + recall_f1 + K.epsilon()))
 
+def find_max(arr):
+    mx, mx_ind = arr[0], 0
+    for i in range(len(arr)):
+        if arr[i] > mx:
+            mx = arr[i]
+            mx_ind = i
+    return mx_ind
+
 
 class NeuralNetwork:
     IMG_SIZE = (75, 75)
@@ -42,15 +55,17 @@ class NeuralNetwork:
     optimizer = tf.keras.optimizers.Adam(base_learning_rate)
     metrics = ['acc', f1_score, precision, recall]
 
-    def __init__(self, filename):
+    def __init__(self, filename, *args, **kargs):
         if os.path.exists(filename):
-            self.model = tf.keras.models.load_model(filename)
+            self.model = tf.keras.models.load_model(filename, custom_objects = {'f1_score': f1_score, 'precision': precision, 'recall': recall })
+
         else:
             self.model = self.createModel(self.IMG_SIZE)
         self.model.compile(optimizer=self.optimizer, loss=self.loss_function, metrics=self.metrics)
 
     def train(self, directory):
         self.load_dataset(directory)
+        print(self.train_dataset.class_indices.keys())
         self.history = self.model.fit(self.train_dataset, epochs=self.initial_epochs)
         self.fine_tune()
 
@@ -66,7 +81,9 @@ class NeuralNetwork:
                 np.append(new_sample, sample, axis=0)
             sample = new_sample
         res = self.model.predict(np.array([sample]))
-        return self.data_generator.class_indices()[res]
+
+        return sth[find_max(res[0])]
+
 
     def load_dataset(self, directory):
         # Датасет для тренування
@@ -88,6 +105,7 @@ class NeuralNetwork:
         self.model.compile(optimizer=self.optimizer, loss=self.loss_function, metrics=self.metrics)
         self.model.fit(self.train_dataset, epochs=total_epochs, initial_epoch=self.history.epoch[-1])
 
+
     def createModel(self, image_shape=IMG_SIZE):
         """
         Аргументи:
@@ -97,10 +115,10 @@ class NeuralNetwork:
         """
         input_shape = image_shape + (3,)
 
-        base_model = tf.keras.applications.InceptionV3(input_shape=input_shape,
+        base_model = InceptionV3(input_shape=input_shape,
                                  include_top=False,
                                  weights="imagenet",
-                                 classes=29,
+                                 classes=32,
                                  classifier_activation="softmax")
         # заморозимо шари, щоб їх не тренувати
         base_model.trainable = False
@@ -114,8 +132,20 @@ class NeuralNetwork:
         x = base_model(x, training=False)
         x = tfl.GlobalAveragePooling2D()(x)
         x = tfl.Dropout(0.2)(x)
-        outputs = tfl.Dense(29, activation="softmax")(x)
+        outputs = tfl.Dense(32, activation="softmax")(x)
 
         model = tf.keras.Model(inputs, outputs)
 
         return model
+
+
+if __name__ == '__main__':
+    model = NeuralNetwork('')
+    model.train('data/images')
+    res = []
+    path = 'data/images/sqrt/'
+    for el in os.listdir(path):
+        image = cv2.imread(path + el)
+        res.append(model.recognize(image))
+    print(res)
+

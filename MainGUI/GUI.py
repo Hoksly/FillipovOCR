@@ -1,20 +1,20 @@
-import shutil
+
 import sys
 import os
-import sip
-import math
-from collections import deque
+
+from config import MODEL_LOCATION
+
 from parsing.parser import Parser
 from assembling.assemble import Assembler
 from solver.dsolver import DSolver
-#from neuro.neuralNetwork import NeuralNetwork
-from PyQt5.QtWidgets import QStackedLayout, QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, QCheckBox, \
-    QApplication, QMenuBar, QMenu, QMainWindow, QAction, qApp, QFileDialog, QMessageBox, QLineEdit, QInputDialog
+from neuro.neuralNetwork import NeuralNetwork
+from PyQt5.QtWidgets import QVBoxLayout, QGridLayout, QWidget, QLabel, QPushButton, \
+    QApplication, QFileDialog, QMessageBox, QLineEdit
 from MainGUI.render import mathTex_to_QPixmap
-
-from PyQt5.QtGui import QPixmap, QKeyEvent, QFont
+from Collection import Node, NodeType
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt
-from PyQt5 import QtCore
+
 
 
 
@@ -63,7 +63,6 @@ class MainWindow(QWidget):
         self.setNextImage()
 
     def openImage(self):
-        print("HERE")
         self.currentImage = QFileDialog.getOpenFileName(None, "Select image:", '')[0]
         if self.currentImage:
             self.setImage(self.currentImage)
@@ -72,26 +71,27 @@ class MainWindow(QWidget):
         parser = Parser()
         rawImages = parser.parseAndConvert(self.currentImage) if self.currentImage else []
         nodes = []
-        try:
-            recognizer = NeuralNetwork('data/model')
-            for raw in rawImages:
-                pass
-                #nodes.append(recognizer.recognize(raw))
 
-            self.parsedLabel.setText(Assembler.assemble(nodes))
-            if self.parsedLabel.text():
-                self.parsedLatex.setPixmap(mathTex_to_QPixmap(DSolver.to_latex(self.parsedLabel.text())))
+        recognizer = NeuralNetwork(MODEL_LOCATION)
+        for raw in rawImages:
+            nodes.append(Node(NodeType.UNDEFINED, recognizer.recognize(raw.image), raw.imageBox))
+        print(nodes)
+        self.parsedLabel.setText(Assembler.assemble(nodes))
+        if self.parsedLabel.text():
+            self.parsedLatex.setPixmap(mathTex_to_QPixmap(DSolver.to_latex(self.parsedLabel.text())))
 
-        except Exception as e:
-            pass
 
 
 
     def solveIt(self):
         if self.parsedLabel.text():
-            self.solutionLabel.setText(DSolver.solve(self.parsedLabel.text()))
+            solution = DSolver.solve(self.parsedLabel.text())
+            self.solutionLabel.setText(solution if solution else '')
             print(self.solutionLabel.text())
-            self.solutionLatex.setPixmap(mathTex_to_QPixmap(('$' + self.solutionLabel.text() + '$')))
+            if solution:
+                self.solutionLatex.setPixmap(mathTex_to_QPixmap(('$' + self.solutionLabel.text() + '$')))
+            else:
+                self.solutionLatex.setText("ERROR")
 
     def addButtons(self):
         openImageButton = QPushButton("open image", self)
