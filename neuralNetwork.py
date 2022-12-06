@@ -38,6 +38,7 @@ class NeuralNetwork:
     base_learning_rate = 0.01
     initial_epochs = 10
     loss_function = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+    data_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
     optimizer = tf.keras.optimizers.Adam(base_learning_rate)
     metrics = ['acc', f1_score, precision, recall]
 
@@ -64,12 +65,12 @@ class NeuralNetwork:
                 sample.reshape(s1, s2, 1)
                 np.append(new_sample, sample, axis=0)
             sample = new_sample
-        self.model.predict(np.array([sample]))
+        res = self.model.predict(np.array([sample]))
+        return self.data_generator.class_indices()[res]
 
     def load_dataset(self, directory):
-        data_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
         # Датасет для тренування
-        self.train_dataset = data_generator.flow_from_directory(directory, target_size=self.IMG_SIZE,
+        self.train_dataset = self.data_generator.flow_from_directory(directory, target_size=self.IMG_SIZE,
                                                                 class_mode='categorical')
 
     def fine_tune(self, fine_tune_start=250):
