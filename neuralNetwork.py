@@ -1,4 +1,5 @@
 import os
+from matplotlib.image import imread
 import numpy as np
 import tensorflow as tf
 import tensorflow.python.keras.layers as tfl
@@ -42,7 +43,7 @@ class NeuralNetwork:
     optimizer = tf.keras.optimizers.Adam(base_learning_rate)
     metrics = ['acc', f1_score, precision, recall]
 
-    def __init__(self, filename):
+    def __init__(self, filename=""):
         if os.path.exists(filename):
             self.model = tf.keras.models.load_model(filename)
         else:
@@ -119,3 +120,12 @@ class NeuralNetwork:
         model = tf.keras.Model(inputs, outputs)
 
         return model
+
+
+path = "/Users/tylerdurden/PycharmProjects/DifferentialEquationsOCR/images/sqrt/img115.png"
+data = imread(path)
+
+nn = NeuralNetwork()
+symbol = nn.recognize(data)
+print(symbol)
+
