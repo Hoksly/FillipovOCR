@@ -133,7 +133,7 @@ if __name__ == '__main__':
     w.verticalHeader().hide()
 
     headerLabels = [
-        '$y_{(x)} = C_{1} + e_{x}$',
+        '$\\mathtt{\\text{y=kx}}$',
         '$k_{soil}=\\frac{\\sum f_j k_j \\theta_j}{\\sum f_j \\theta_j}$',
         '$\\lambda_{soil}=k_{soil} / C_{soil}$']
 

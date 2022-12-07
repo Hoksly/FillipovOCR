@@ -75,12 +75,11 @@ class MainWindow(QWidget):
         recognizer = NeuralNetwork(MODEL_LOCATION)
         for raw in rawImages:
             nodes.append(Node(NodeType.UNDEFINED, recognizer.recognize(raw.image), raw.imageBox))
-        print(nodes)
+
         self.parsedLabel.setText(Assembler.assemble(nodes))
+
         if self.parsedLabel.text():
-            self.parsedLatex.setPixmap(mathTex_to_QPixmap(DSolver.to_latex(self.parsedLabel.text())))
-
-
+            self.parsedLatex.setPixmap(mathTex_to_QPixmap("$" + DSolver.to_latex(self.parsedLabel.text() )+ '$'))
 
 
     def solveIt(self):
